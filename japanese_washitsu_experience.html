@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일본 전통 주거 문화 (와시쓰 체험)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; user-select: none; }
+        
+        /* 다다미 조립 및 대칭 레이아웃 */
+        .tatami-mat {
+            background-color: #d9e3b1;
+            background-image: repeating-linear-gradient(90deg, #d3dda9, #d3dda9 2px, #e1eaa9 2px, #e1eaa9 6px);
+            border: 3px solid #365314;
+            transition: all 0.3s ease;
+        }
+
+        /* 미닫이문 슬라이드 */
+        .shoji-panel, .fusuma-panel {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .door-open-top { transform: translateY(-90%); }
+        .door-open-bottom { transform: translateY(90%); }
+
+        /* 오시이레 좌우 미닫이문 */
+        .oshiire-panel {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .oshiire-open-left { transform: translateX(-88%); }
+        .oshiire-open-right { transform: translateX(88%); }
+
+        /* 스티커 아이템 */
+        .placed-sticker {
+            cursor: move;
+            transition: transform 0.1s ease;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        }
+        .placed-sticker:active { transform: scale(1.05); }
+
+        /* 캐릭터 이동 애니메이션 */
+        #player-avatar {
+            transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+    </style>
+</head>
+<body class="bg-amber-50 h-screen flex flex-col justify-between overflow-hidden p-2 text-stone-800">
+
+    <!-- 상단 헤더 & 컨트롤러 -->
+    <header class="bg-amber-100 border border-amber-300 rounded-xl px-4 py-2 flex justify-between items-center shadow-sm">
+        <h1 class="text-base sm:text-lg font-bold text-amber-950 flex items-center gap-2">
+            <span>⛩️</span> 일본 전통 주거 문화 <span class="text-xs font-normal text-amber-800 bg-amber-200 px-2 py-0.5 rounded-full">(와시쓰 체험)</span>
+        </h1>
+        <div class="flex gap-2">
+            <button onclick="resetTatami()" class="bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs px-2.5 py-1 rounded-lg border border-stone-300 transition font-medium">
+                🧩 다다미 초기화
+            </button>
+            <button onclick="resetStickers()" class="bg-rose-100 hover:bg-rose-200 text-rose-900 text-xs px-2.5 py-1 rounded-lg border border-rose-300 transition font-medium flex items-center gap-1">
+                🔄 소품 초기화
+            </button>
+        </div>
+    </header>
+
+    <!-- 메인 시뮬레이터 공간 (야외정원 2 : 엔가와 3 : 와시쓰 7 비율) -->
+    <main class="grid grid-cols-12 gap-1.5 my-1.5 flex-1 max-h-[75vh] w-full">
+        
+        <!-- 1. 야외 정원 (2칸 - 슬림화) -->
+        <section class="col-span-2 bg-gradient-to-b from-sky-200 via-emerald-100 to-emerald-300 rounded-xl border-2 border-emerald-400 p-2 relative overflow-hidden flex flex-col justify-between shadow-inner">
+            <div class="bg-emerald-800/80 text-white text-[10px] sm:text-xs px-2 py-0.5 rounded-md self-start font-bold">
+                🏡 야외 정원
+            </div>
+            <!-- 석등 및 디딤돌 decoration -->
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none opacity-80">
+                <span class="text-2xl">🏮</span>
+                <div class="w-8 h-3 bg-stone-400 rounded-full border border-stone-500"></div>
+                <div class="w-10 h-4 bg-stone-400 rounded-full border border-stone-500"></div>
+            </div>
+        </section>
+
+        <!-- 2. 툇마루 (엔가와 - 3칸) -->
+        <section class="col-span-3 bg-amber-700 rounded-xl border-2 border-amber-900 p-2 relative flex flex-col justify-between shadow-md" style="background-image: repeating-linear-gradient(0deg, #78350f, #78350f 12px, #451a03 12px, #451a03 14px);">
+            <div class="bg-amber-950/90 text-amber-100 text-[10px] sm:text-xs px-2 py-0.5 rounded-md self-start font-bold border border-amber-700">
+                툇마루 (엔가와)
+            </div>
+            <!-- 엔가와 바깥 풍경 가이드 -->
+            <div class="text-[10px] text-amber-200/70 text-center pointer-events-none mb-2">
+                정원과 방을 연결하는 마루 공간
+            </div>
+        </section>
+
+        <!-- 3. 전통 방 (와시쓰 - 7칸 확장) -->
+        <section class="col-span-7 bg-amber-100 rounded-xl border-4 border-amber-900 p-2 relative flex flex-col justify-between shadow-xl overflow-hidden">
+            
+            <!-- 상단 구역: 도코노마 & 오시이레 -->
+            <div class="grid grid-cols-12 gap-2 h-2/5 mb-1 z-10">
+                
+                <!-- 도코노마 (とこのま - 입체 단차 공간) -->
+                <div class="col-span-7 bg-amber-800 rounded-lg border-2 border-amber-950 p-1.5 relative flex flex-col justify-between shadow-inner" style="background-image: linear-gradient(to bottom, #78350f, #92400e);">
+                    <div class="flex justify-between items-center z-10">
+                        <span class="bg-amber-950 text-amber-100 text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold border border-amber-700">
+                            도코노마 (とこのま)
+                        </span>
+                        <span class="text-[9px] text-amber-200 bg-amber-900/80 px-1.5 py-0.5 rounded border border-amber-700">
+                            ⬆️ 한 단계 높은 단차
+                        </span>
+                    </div>
+
+                    <!-- 족자 및 꽃꽂이 장식 영역 -->
+                    <div class="absolute inset-0 flex justify-center items-center pointer-events-none opacity-40">
+                        <span class="text-xs text-amber-100 font-bold">족자 · 꽃꽂이 장식 전용 공간</span>
+                    </div>
+
+                    <!-- 도코노마 목재 받침단 -->
+                    <div class="w-full h-3 bg-amber-950 rounded-b border-t-2 border-amber-600 shadow-md"></div>
+                </div>
+
+                <!-- 오시이레 (おしいれ - 붙박이장, 좌우 개폐) -->
+                <div class="col-span-5 bg-amber-200 rounded-lg border-2 border-amber-800 relative overflow-hidden flex flex-col justify-between p-1.5 shadow-inner">
+                    <div class="flex justify-between items-center z-10">
+                        <span class="bg-amber-900 text-amber-50 text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold">
+                            오시이레 (おしいれ)
+                        </span>
+                    </div>
+                    
+                    <div class="text-[9px] text-amber-900/70 text-center font-medium my-auto z-0">
+                        📦 수납장 (이불·물건 보관)<br><span class="text-[8px] text-rose-700 font-bold">문 클릭 시 좌우 개폐</span>
+                    </div>
+
+                    <!-- 오시이레 좌우 미닫이문 (후스마 재질) -->
+                    <div id="oshiire-door-left" onclick="toggleOshiire()" class="oshiire-panel absolute top-0 left-0 w-1/2 h-full bg-amber-50 border-r-2 border-amber-400 z-20 cursor-pointer flex items-center justify-end pr-1 shadow-md">
+                        <div class="w-2 h-6 bg-amber-800 rounded-sm"></div>
+                    </div>
+                    <div id="oshiire-door-right" onclick="toggleOshiire()" class="oshiire-panel absolute top-0 right-0 w-1/2 h-full bg-amber-50 border-l-2 border-amber-400 z-20 cursor-pointer flex items-center justify-start pl-1 shadow-md">
+                        <div class="w-2 h-6 bg-amber-800 rounded-sm"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 하단 구역: 정통 6조 (6畳) 다다미 조립 프레임 -->
+            <div class="h-3/5 border-4 border-amber-900 rounded-lg p-1 bg-amber-950/20 relative">
+                
+                <!-- 다다미 미깔림 안내 문구 -->
+                <div id="tatami-guide" class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                    <span class="bg-amber-900/90 text-amber-100 text-xs px-3 py-1.5 rounded-full font-bold shadow-lg animate-pulse">
+                        👇 하단 [다다미 깔기] 버튼을 눌러 6장의 다다미를 딱 맞게 맞춰보세요!
+                    </span>
+                </div>
+
+                <!-- 정통 6조 (6畳) 다다미 Grid (1:2 비율 및 완전 대칭, 4열 x 4행 구조) -->
+                <div class="grid grid-cols-4 grid-rows-4 gap-1 h-full w-full relative z-10">
+                    
+                    <!-- 1. 상단 가로 다다미 (1행 전체) -->
+                    <div id="tatami-1" class="col-span-4 row-span-1 hidden tatami-mat rounded flex items-center justify-center font-bold text-emerald-950 text-xs shadow-sm">
+                        다다미 1
+                    </div>
+
+                    <!-- 2. 좌측 세로 다다미 (2~3행 1열) -->
+                    <div id="tatami-2" class="col-start-1 col-end-2 row-start-2 row-end-4 hidden tatami-mat rounded flex items-center justify-center font-bold text-emerald-950 text-xs shadow-sm" style="writing-mode: vertical-rl;">
+                        다다미 2
+                    </div>
+
+                    <!-- 3. 중앙 상단 가로 다다미 (2행 2~3열) -->
+                    <div id="tatami-3" class="col-start-2 col-end-4 row-start-2 row-end-3 hidden tatami-mat rounded flex items-center justify-center font-bold text-emerald-950 text-xs shadow-sm">
+                        다다미 3
+                    </div>
+
+                    <!-- 4. 중앙 하단 가로 다다미 (3행 2~3열) -->
+                    <div id="tatami-4" class="col-start-2 col-end-4 row-start-3 row-end-4 hidden tatami-mat rounded flex items-center justify-center font-bold text-emerald-950 text-xs shadow-sm">
+                        다다미 4
+                    </div>
+
+                    <!-- 5. 우측 세로 다다미 (2~3행 4열 - 좌측 다다미 2와 완전 대칭) -->
+                    <div id="tatami-5" class="col-start-4 col-end-5 row-start-2 row-end-4 hidden tatami-mat rounded flex items-center justify-center font-bold text-emerald-950 text-xs shadow-sm" style="writing-mode: vertical-rl;">
+                        다다미 5
+                    </div>
+
+                    <!-- 6. 하단 가로 다다미 (4행 전체 - 상단 다다미 1과 완벽히 동일한 크기) -->
+                    <div id="tatami-6" class="col-span-4 row-span-1 hidden tatami-mat rounded flex items-center justify-center font-bold text-emerald-950 text-xs shadow-sm">
+                        다다미 6
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 쇼지 (Shoji - 엔가와/와시쓰 경계 미닫이문) -->
+            <div id="shoji-container" class="absolute top-0 bottom-0 -left-1 w-6 z-30 flex flex-col justify-between cursor-pointer" onclick="toggleShoji()">
+                <div id="shoji-top" class="shoji-panel w-full h-1/2 bg-amber-50/90 border-2 border-amber-800 flex items-center justify-center shadow-md">
+                    <div class="w-full h-full border border-amber-400 opacity-60"></div>
+                </div>
+                <div id="shoji-bottom" class="shoji-panel w-full h-1/2 bg-amber-50/90 border-2 border-amber-800 flex items-center justify-center shadow-md">
+                    <div class="w-full h-full border border-amber-400 opacity-60"></div>
+                </div>
+                <!-- 쇼지 위치 안내 배너 태그 -->
+                <div class="absolute top-1/2 -left-6 -translate-y-1/2 bg-amber-900 text-amber-100 text-[9px] font-bold px-1 py-1 rounded shadow border border-amber-600 whitespace-nowrap -rotate-90 pointer-events-none">
+                    📜 쇼지 (미닫이문)
+                </div>
+            </div>
+
+            <!-- 후스마 (Fusuma - 옆방 구별 미닫이문) -->
+            <div id="fusuma-container" class="absolute top-0 bottom-0 -right-1 w-6 z-30 flex flex-col justify-between cursor-pointer" onclick="toggleFusuma()">
+                <div id="fusuma-top" class="fusuma-panel w-full h-1/2 bg-stone-100 border-2 border-stone-700 flex items-center justify-center shadow-md">
+                    <div class="w-1.5 h-6 bg-stone-800 rounded"></div>
+                </div>
+                <div id="fusuma-bottom" class="fusuma-panel w-full h-1/2 bg-stone-100 border-2 border-stone-700 flex items-center justify-center shadow-md">
+                    <div class="w-1.5 h-6 bg-stone-800 rounded"></div>
+                </div>
+                <div class="absolute top-1/2 -right-7 -translate-y-1/2 bg-stone-800 text-stone-100 text-[9px] font-bold px-1 py-1 rounded shadow border border-stone-600 whitespace-nowrap rotate-90 pointer-events-none">
+                    🚪 후스마 (방문)
+                </div>
+            </div>
+
+            <!-- 스티커 소품들이 배치될 레이어 -->
+            <div id="sticker-container" class="absolute inset-0 pointer-events-none z-20"></div>
+
+        </section>
+
+        <!-- 이동 가능한 유카타 여자아이 캐릭터 (전체 화면 기준 레이어) -->
+        <div id="player-avatar" class="absolute z-40 flex flex-col items-center pointer-events-none transition-all duration-300" style="left: 8%; top: 55%; transform: translate(-50%, -50%);">
+            <!-- 예쁜 유카타 여자아이 SVG -->
+            <div class="w-10 h-14 drop-shadow-md">
+                <svg viewBox="0 0 100 140" class="w-full h-full">
+                    <!-- 헤어 스타일 & 머리리본 -->
+                    <path d="M 30,35 Q 50,5 70,35 Z" fill="#262626"/>
+                    <circle cx="50" cy="30" r="22" fill="#334155"/>
+                    <circle cx="68" cy="18" r="8" fill="#f43f5e"/>
+                    <!-- 얼굴 -->
+                    <circle cx="50" cy="36" r="16" fill="#fde047"/>
+                    <!-- 눈 & 볼터치 -->
+                    <circle cx="44" cy="36" r="2" fill="#0f172a"/>
+                    <circle cx="56" cy="36" r="2" fill="#0f172a"/>
+                    <circle cx="41" cy="40" r="2.5" fill="#fb7185"/>
+                    <circle cx="59" cy="40" r="2.5" fill="#fb7185"/>
+                    <!-- 유카타 몸통 (분홍 꽃무늬) -->
+                    <path d="M 30,52 L 70,52 L 82,110 L 18,110 Z" fill="#f472b6"/>
+                    <!-- 오비 띠 (빨간색) -->
+                    <rect x="28" y="65" width="44" height="14" fill="#e11d48" rx="2"/>
+                    <rect x="42" y="63" width="16" height="18" fill="#be123c" rx="1"/>
+                    <!-- 게타 발 -->
+                    <rect x="35" y="110" width="10" height="6" fill="#78350f" rx="1"/>
+                    <rect x="55" y="110" width="10" height="6" fill="#78350f" rx="1"/>
+                </svg>
+            </div>
+            <span class="bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow border border-white mt-0.5">학습자</span>
+        </div>
+
+    </main>
+
+    <!-- 하단 조작 패널 (스티커 & 캐릭터 조작 & 다다미 조립) -->
+    <footer class="grid grid-cols-12 gap-2 bg-amber-100 p-2 rounded-xl border-2 border-amber-300 shadow-md">
+        
+        <!-- 1. 캐릭터 이동 컨트롤러 (3 Cols) -->
+        <div class="col-span-3 bg-amber-50 p-1.5 rounded-lg border border-amber-200 flex flex-col justify-between">
+            <span class="text-[10px] text-amber-950 font-bold">🚶 캐릭터 이동</span>
+            <div class="flex items-center justify-around gap-1 my-auto">
+                <button onclick="movePlayer(-1)" class="bg-amber-200 hover:bg-amber-300 active:bg-amber-400 text-amber-950 font-bold text-xs px-3 py-1.5 rounded-lg border border-amber-400 shadow-sm transition">
+                    ◀ 왼쪽
+                </button>
+                <button onclick="movePlayer(1)" class="bg-amber-200 hover:bg-amber-300 active:bg-amber-400 text-amber-950 font-bold text-xs px-3 py-1.5 rounded-lg border border-amber-400 shadow-sm transition">
+                    오른쪽 ▶
+                </button>
+            </div>
+            <span id="location-status" class="text-[9px] text-amber-800 text-center font-medium">위치: 야외 정원</span>
+        </div>
+
+        <!-- 2. 다다미 맞춤 깔기 패널 (4 Cols) -->
+        <div class="col-span-4 bg-emerald-50 p-1.5 rounded-lg border border-emerald-200 flex flex-col justify-between">
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] text-emerald-950 font-bold">🧩 다다미 조립 (클릭하여 깔기)</span>
+                <button onclick="autoFillTatami()" class="text-[9px] bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded shadow">✨ 모두깔기</button>
+            </div>
+            <div class="grid grid-cols-3 gap-1 my-1">
+                <button onclick="toggleTatamiPiece(1)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[9px] py-1 rounded font-bold border border-emerald-300">1. 상단가로</button>
+                <button onclick="toggleTatamiPiece(2)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[9px] py-1 rounded font-bold border border-emerald-300">2. 좌측세로</button>
+                <button onclick="toggleTatamiPiece(3)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[9px] py-1 rounded font-bold border border-emerald-300">3. 중앙상단</button>
+                <button onclick="toggleTatamiPiece(4)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[9px] py-1 rounded font-bold border border-emerald-300">4. 중앙하단</button>
+                <button onclick="toggleTatamiPiece(5)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[9px] py-1 rounded font-bold border border-emerald-300">5. 우측세로</button>
+                <button onclick="toggleTatamiPiece(6)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[9px] py-1 rounded font-bold border border-emerald-300">6. 하단가로</button>
+            </div>
+        </div>
+
+        <!-- 3. 와시쓰 소품 스티커 (5 Cols) -->
+        <div class="col-span-5 bg-amber-50 p-1.5 rounded-lg border border-amber-200 flex flex-col justify-between">
+            <span class="text-[10px] text-amber-950 font-bold">🧺 방 꾸미기 소품 (클릭 시 생성)</span>
+            <div class="grid grid-cols-6 gap-1 my-auto">
+                
+                <!-- 1. 족자 -->
+                <button onclick="spawnSticker('scroll')" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded p-1 flex flex-col items-center justify-center transition group">
+                    <span class="text-sm">📜</span>
+                    <span class="text-[8px] text-amber-900 group-hover:font-bold">족자</span>
+                </button>
+
+                <!-- 2. 꽃꽂이 -->
+                <button onclick="spawnSticker('flower')" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded p-1 flex flex-col items-center justify-center transition group">
+                    <span class="text-sm">🌸</span>
+                    <span class="text-[8px] text-amber-900 group-hover:font-bold">꽃꽂이</span>
+                </button>
+
+                <!-- 3. 고타쓰 -->
+                <button onclick="spawnSticker('kotatsu')" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded p-1 flex flex-col items-center justify-center transition group">
+                    <span class="text-sm">♨️</span>
+                    <span class="text-[8px] text-amber-900 group-hover:font-bold">고타쓰</span>
+                </button>
+
+                <!-- 4. 귤 -->
+                <button onclick="spawnSticker('mikan')" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded p-1 flex flex-col items-center justify-center transition group">
+                    <span class="text-sm">🍊</span>
+                    <span class="text-[8px] text-amber-900 group-hover:font-bold">귤</span>
+                </button>
+
+                <!-- 5. 전통 이불 (진짜 요·이불 이모티콘 🛏️ 적용) -->
+                <button onclick="spawnSticker('futon')" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded p-1 flex flex-col items-center justify-center transition group">
+                    <span class="text-sm">🛏️</span>
+                    <span class="text-[8px] text-amber-900 group-hover:font-bold">전통 이불</span>
+                </button>
+
+                <!-- 6. 장난감 -->
+                <button onclick="spawnSticker('toys')" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded p-1 flex flex-col items-center justify-center transition group">
+                    <span class="text-sm">🧸</span>
+                    <span class="text-[8px] text-amber-900 group-hover:font-bold">장난감</span>
+                </button>
+
+            </div>
+        </div>
+
+    </footer>
+
+    <!-- 자바스크립트 로직 -->
+    <script>
+        // 상태 변수 (학습자 시작 위치: 야외 정원 8% 위치)
+        let playerPosX = 8; // 백분율 (%)
+        let isShojiOpen = false;
+        let isFusumaOpen = false;
+        let isOshiireOpen = false;
+        const placedTatami = new Set();
+
+        // 소품 스티커 템플릿 (진짜 전통 이불 형태 적용)
+        const stickerTemplates = {
+            scroll: { name: '족자', html: '<span class="text-3xl">📜</span>' },
+            flower: { name: '꽃꽂이', html: '<span class="text-3xl">🌸</span>' },
+            kotatsu: { 
+                name: '고타쓰', 
+                html: `<div class="w-20 h-16 relative flex items-center justify-center drop-shadow-md">
+                        <!-- 코타츠 이불 자락 -->
+                        <div class="absolute inset-0 bg-red-700 rounded-lg border-2 border-red-900 shadow-inner flex items-center justify-center" style="background-image: radial-gradient(#991b1b 15%, transparent 16%); background-size: 8px 8px;"></div>
+                        <!-- 코타츠 이불 주름 깃 -->
+                        <div class="absolute -inset-1 bg-amber-800/40 rounded-xl blur-[1px] -z-10"></div>
+                        <!-- 코타츠 목재 상판 -->
+                        <div class="w-14 h-10 bg-amber-200 border-2 border-amber-800 rounded z-10 flex flex-col items-center justify-center shadow-md">
+                            <div class="w-12 h-8 border border-amber-600/40 rounded-sm flex items-center justify-center bg-amber-100">
+                                <span class="text-[10px] font-bold text-amber-950">고타쓰</span>
+                            </div>
+                        </div>
+                       </div>` 
+            },
+            mikan: { name: '귤', html: '<span class="text-2xl">🍊</span>' },
+            futon: { 
+                name: '전통 이불', 
+                html: `<div class="w-24 h-16 bg-red-100 border-2 border-red-300 rounded-lg p-1 flex flex-col justify-between shadow-lg relative overflow-hidden" style="background-image: repeating-linear-gradient(45deg, #fecdd3, #fecdd3 6px, #ffe4e6 6px, #ffe4e6 12px);">
+                        <!-- 바닥 요 (매트리스) 깃 -->
+                        <div class="absolute inset-x-0 bottom-0 h-3 bg-stone-200 border-t border-stone-300"></div>
+                        <!-- 전통 베개 (마쿠라) -->
+                        <div class="w-10 h-4 bg-indigo-900 rounded-sm border border-indigo-950 mx-auto mt-0.5 flex items-center justify-center shadow-sm">
+                            <div class="w-8 h-2 bg-indigo-200/40 rounded-xs"></div>
+                        </div>
+                        <!-- 접혀진 전통 덮개 이불 (kakefuton) -->
+                        <div class="w-full h-8 bg-rose-500 rounded-b-md border-t-2 border-rose-700 shadow-md flex items-center justify-center relative">
+                            <div class="w-full h-2 bg-white absolute top-0 inset-x-0 border-b border-rose-300 opacity-90"></div>
+                            <span class="text-[9px] font-bold text-white drop-shadow mt-1">전통 이불</span>
+                        </div>
+                       </div>` 
+            },
+            toys: { name: '장난감', html: '<span class="text-3xl">🧸</span>' }
+        };
+
+        // 1. 캐릭터 이동 제어 (쇼지문 통과 로직 포함)
+        function movePlayer(dir) {
+            const step = 8;
+            let nextX = playerPosX + (dir * step);
+
+            // 경계선 조건 (야외 정원 5% ~ 와시쓰 방 내부 92%)
+            if (nextX < 5) nextX = 5;
+            if (nextX > 92) nextX = 92;
+
+            // 쇼지 미닫이문 통과 체크 (X: 42% 부근이 방 경계)
+            if (playerPosX < 40 && nextX >= 40 && !isShojiOpen) {
+                alert('📜 쇼지(미닫이문)가 닫혀 있어 방 안으로 들어갈 수 없습니다! 쇼지문을 클릭하여 열어주세요.');
+                return;
+            }
+
+            // 후스마 미닫이문 통과 체크 (X: 88% 부근)
+            if (playerPosX <= 86 && nextX > 86 && !isFusumaOpen) {
+                alert('🚪 후스마(방문)가 닫혀 있습니다! 방문을 클릭해서 열어주세요.');
+                return;
+            }
+
+            playerPosX = nextX;
+            const avatar = document.getElementById('player-avatar');
+            avatar.style.left = playerPosX + '%';
+
+            // 위치 상태 텍스트 갱신
+            const status = document.getElementById('location-status');
+            if (playerPosX < 17) {
+                status.textContent = '위치: 야외 정원';
+            } else if (playerPosX >= 17 && playerPosX < 40) {
+                status.textContent = '위치: 툇마루 (엔가와)';
+            } else {
+                status.textContent = '위치: 와시쓰 (전통 방 안)';
+            }
+        }
+
+        // 초기화 시 캐릭터 위치 갱신
+        window.addEventListener('DOMContentLoaded', () => {
+            const avatar = document.getElementById('player-avatar');
+            if (avatar) avatar.style.left = playerPosX + '%';
+        });
+
+        // 키보드 화살표 이동 지원
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') movePlayer(-1);
+            if (e.key === 'ArrowRight') movePlayer(1);
+        });
+
+        // 2. 미닫이문 개폐 토글
+        function toggleShoji() {
+            isShojiOpen = !isShojiOpen;
+            const top = document.getElementById('shoji-top');
+            const bottom = document.getElementById('shoji-bottom');
+
+            if (isShojiOpen) {
+                top.classList.add('door-open-top');
+                bottom.classList.add('door-open-bottom');
+            } else {
+                top.classList.remove('door-open-top');
+                bottom.classList.remove('door-open-bottom');
+            }
+        }
+
+        function toggleFusuma() {
+            isFusumaOpen = !isFusumaOpen;
+            const top = document.getElementById('fusuma-top');
+            const bottom = document.getElementById('fusuma-bottom');
+
+            if (isFusumaOpen) {
+                top.classList.add('door-open-top');
+                bottom.classList.add('door-open-bottom');
+            } else {
+                top.classList.remove('door-open-top');
+                bottom.classList.remove('door-open-bottom');
+            }
+        }
+
+        function toggleOshiire() {
+            isOshiireOpen = !isOshiireOpen;
+            const left = document.getElementById('oshiire-door-left');
+            const right = document.getElementById('oshiire-door-right');
+
+            if (isOshiireOpen) {
+                left.classList.add('oshiire-open-left');
+                right.classList.add('oshiire-open-right');
+            } else {
+                left.classList.remove('oshiire-open-left');
+                right.classList.remove('oshiire-open-right');
+            }
+        }
+
+        // 3. 다다미 깔기 미니게임
+        function toggleTatamiPiece(num) {
+            const piece = document.getElementById(`tatami-${num}`);
+            if (!piece) return;
+
+            if (placedTatami.has(num)) {
+                placedTatami.delete(num);
+                piece.classList.add('hidden');
+            } else {
+                placedTatami.add(num);
+                piece.classList.remove('hidden');
+            }
+
+            checkTatamiComplete();
+        }
+
+        function autoFillTatami() {
+            for (let i = 1; i <= 6; i++) {
+                placedTatami.add(i);
+                const piece = document.getElementById(`tatami-${i}`);
+                if (piece) piece.classList.remove('hidden');
+            }
+            checkTatamiComplete();
+        }
+
+        function resetTatami() {
+            placedTatami.clear();
+            for (let i = 1; i <= 6; i++) {
+                const piece = document.getElementById(`tatami-${i}`);
+                if (piece) piece.classList.add('hidden');
+            }
+            document.getElementById('tatami-guide').classList.remove('hidden');
+        }
+
+        function checkTatamiComplete() {
+            const guide = document.getElementById('tatami-guide');
+            if (placedTatami.size === 6) {
+                guide.classList.add('hidden');
+            } else {
+                guide.classList.remove('hidden');
+            }
+        }
+
+        // 4. 소품 스티커 배치 및 드래그
+        function spawnSticker(type) {
+            const container = document.getElementById('sticker-container');
+            const template = stickerTemplates[type];
+            if (!template) return;
+
+            const sticker = document.createElement('div');
+            sticker.className = 'placed-sticker absolute pointer-events-auto flex items-center justify-center';
+            sticker.innerHTML = template.html;
+            
+            // 와시쓰 방 중앙 부근 생성
+            sticker.style.left = (50 + (Math.random() * 20 - 10)) + '%';
+            sticker.style.top = (45 + (Math.random() * 20 - 10)) + '%';
+
+            // 마우스 드래그 이벤트
+            let isDragging = false;
+            let startX, startY, origLeft, origTop;
+
+            sticker.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                origLeft = sticker.offsetLeft;
+                origTop = sticker.offsetTop;
+                e.stopPropagation();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                sticker.style.left = (origLeft + dx) + 'px';
+                sticker.style.top = (origTop + dy) + 'px';
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            // 터치 이벤트 지원 (모바일)
+            sticker.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                origLeft = sticker.offsetLeft;
+                origTop = sticker.offsetTop;
+            });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+                sticker.style.left = (origLeft + dx) + 'px';
+                sticker.style.top = (origTop + dy) + 'px';
+            });
+
+            window.addEventListener('touchend', () => { isDragging = false; });
+
+            // 더블 클릭 시 제거
+            sticker.addEventListener('dblclick', () => {
+                sticker.remove();
+            });
+
+            container.appendChild(sticker);
+        }
+
+        function resetStickers() {
+            document.getElementById('sticker-container').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
